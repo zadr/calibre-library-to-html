@@ -317,11 +317,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Export from default Calibre library
+  # Export from default Calibre library to output/ folder
   python export_calibre_library.py
   
   # Export from specific library
   python export_calibre_library.py --library ~/MyBooks
+  
+  # Export to specific directory
+  python export_calibre_library.py --output ~/Desktop/my-library
   
   # Export without covers (faster)
   python export_calibre_library.py --no-covers
@@ -345,8 +348,8 @@ Examples:
     )
     parser.add_argument(
         '--output', '-o',
-        help='Output directory (default: current directory)',
-        default='.'
+        help='Output directory (default: output/)',
+        default='output'
     )
     parser.add_argument(
         '--no-covers',

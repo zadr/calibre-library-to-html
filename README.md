@@ -5,11 +5,11 @@ A lightweight web-based viewer for Calibre libraries with search, sort, and colu
 ## Quick Start
 
 ```bash
-# Export your Calibre library
+# Export your Calibre library to output/ folder
 python export_calibre_library.py
 
 # Open in browser
-open books.html
+open output/books.html
 ```
 
 ## Installation
@@ -24,7 +24,7 @@ open books.html
 ### Export from Calibre
 
 ```bash
-# Auto-detect library and calibredb
+# Auto-detect library and calibredb (exports to output/)
 python export_calibre_library.py
 
 # Specify library location
