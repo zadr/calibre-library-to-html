@@ -629,14 +629,6 @@
                     desc.classList.add('description-collapsed');
                     desc.onclick = () => toggleDescription(desc.id.replace('desc-', ''));
                     
-                    // Add collapse indicator for when expanded
-                    if (!desc.querySelector('.collapse-indicator')) {
-                        const indicator = document.createElement('div');
-                        indicator.className = 'collapse-indicator';
-                        indicator.textContent = 'Click to collapse';
-                        indicator.style.display = 'none';
-                        desc.appendChild(indicator);
-                    }
                 }
             });
         }
@@ -779,8 +771,15 @@
                     } else if (col === 'creator') {
                         return `<td class="authors-cell">${value || '-'}</td>`;
                     } else if (col === 'description') {
-                        // Strip HTML tags from description
-                        const text = value !== '-' && value ? value.replace(/<[^>]*>/g, '') : '-';
+                        // Strip HTML tags from description and preserve newlines
+                        let text = value !== '-' && value ? value.replace(/<[^>]*>/g, '') : '-';
+                        // Trim leading and trailing whitespace
+                        text = text.trim();
+                        // Normalize paragraph breaks in one pass:
+                        // Replace 2+ newlines with exactly 2, and single newlines with 2
+                        text = text.replace(/\n+/g, (match) => match.length >= 2 ? '\n\n' : '\n\n');
+                        // Convert newlines to <br> tags for proper display
+                        text = text.replace(/\n/g, '<br>');
                         const bookId = book.uuid || book.id;
                         
                         // Always create expandable structure, we'll check actual lines after render
