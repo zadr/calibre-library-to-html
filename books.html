@@ -160,21 +160,6 @@
             border-color: #667eea;
         }
 
-        .filter-select {
-            padding: 10px 15px;
-            border: 2px solid #dee2e6;
-            border-radius: 5px;
-            font-size: 16px;
-            background: white;
-            cursor: pointer;
-            transition: border-color 0.3s;
-        }
-
-        .filter-select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
         .table-container {
             position: relative;
             margin-left: -20px;
@@ -390,35 +375,6 @@
             color: #495057;
         }
 
-        .formats {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-        }
-
-        .format {
-            background: #d1ecf1;
-            color: #0c5460;
-            padding: 3px 8px;
-            border-radius: 3px;
-            font-size: 0.85em;
-            font-weight: 500;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 50px;
-            font-size: 1.2em;
-            color: #6c757d;
-        }
-
-        .error {
-            text-align: center;
-            padding: 50px;
-            color: #dc3545;
-            font-size: 1.1em;
-        }
-
         .no-results {
             text-align: center;
             padding: 50px;
@@ -473,7 +429,7 @@
         </div>
         
         <div class="table-container">
-            <div id="tableContent" class="loading">Loading books...</div>
+            <div id="tableContent" style="text-align: center; padding: 50px; font-size: 1.2em; color: #6c757d;">Loading books...</div>
         </div>
     </div>
 
@@ -490,9 +446,6 @@
         let isResizing = false;
         let resizingColumn = null;
         
-        // Remove virtual scrolling - just render all rows
-        // Virtual scrolling is causing image reloading issues
-
         function loadBooks() {
             // Check if the books data is available from the loaded script
             if (typeof booksLibraryData !== 'undefined') {
@@ -523,16 +476,13 @@
                 renderTable();
             } else {
                 document.getElementById('tableContent').innerHTML = 
-                    '<div class="error">Error: books.js file not found. Make sure books.js is in the same directory as this HTML file.</div>';
+                    '<div style="text-align: center; padding: 50px; color: #dc3545; font-size: 1.1em;">Error: books.js file not found. Make sure books.js is in the same directory as this HTML file.</div>';
             }
         }
 
         function setupColumnPicker() {
             const pickerList = document.getElementById('columnPickerList');
-            if (!pickerList) {
-                console.error('Column picker list element not found!');
-                return;
-            }
+            if (!pickerList) return;
             
             pickerList.innerHTML = '';
             
