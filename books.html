@@ -160,19 +160,88 @@
             border-color: #667eea;
         }
 
-        .table-container {
+        .content-container {
             position: relative;
             margin-left: -20px;
             margin-right: -20px;
         }
         
-        @media (max-width: 768px) {
-            .table-container {
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-                margin-left: 0;
-                margin-right: 0;
-            }
+        .content-container.mobile-view .book-row {
+            display: block;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .content-container.mobile-view .book-row .book-cell {
+            display: block;
+            border: none;
+            padding: 0;
+        }
+        
+        .content-container.mobile-view .book-cell.cover-cell {
+            float: left;
+            width: 80px;
+            margin-right: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .content-container.mobile-view .book-cell.title-cell {
+            font-size: 1.2em;
+            font-weight: 600;
+            margin-bottom: 8px;
+            clear: none;
+        }
+        
+        .content-container.mobile-view .book-cell.authors-cell {
+            font-size: 0.95em;
+            margin-bottom: 15px;
+            clear: none;
+        }
+        
+        .content-container.mobile-view .book-cell:not(.cover-cell):not(.title-cell):not(.authors-cell):not(.description-cell) {
+            clear: left;
+            margin-bottom: 0.5em;
+            display: block;
+        }
+        
+        .content-container.mobile-view .book-cell[data-label="Id"],
+        .content-container.mobile-view .book-cell.id-cell {
+            display: none !important;
+        }
+        
+        .field-label {
+            display: none;
+        }
+        
+        .content-container.mobile-view .field-label {
+            display: inline;
+            font-weight: 600;
+            color: #495057;
+            margin-right: 0;
+        }
+        
+        .content-container.mobile-view .book-cell.description-cell {
+            margin-top: 0.5em;
+            margin-bottom: 0.5em;
+            padding-top: 0.5em;
+            border-top: 1px solid #e9ecef;
+            clear: both;
+            display: block;
+        }
+        
+        
+        .content-container.mobile-view table,
+        .content-container.mobile-view thead,
+        .content-container.mobile-view tbody {
+            display: block;
+        }
+        
+        .content-container.mobile-view tr {
+            display: block;
+        }
+        
+        .content-container.mobile-view th {
+            display: none;
         }
 
         table {
@@ -382,6 +451,7 @@
             font-size: 1.1em;
         }
 
+
         @media (max-width: 768px) {
             .container {
                 border-radius: 0;
@@ -395,13 +465,39 @@
                 font-size: 1.8em;
             }
 
-            th, td {
-                padding: 8px;
+            .controls {
+                padding: 15px;
+            }
+
+            .search-box {
+                min-width: 200px;
+            }
+
+            .content-container {
+                overflow-x: visible;
+                margin-left: 0;
+                margin-right: 0;
+            }
+
+            .content-container.mobile-view .book-cell.cover-cell {
+                width: 60px;
+            }
+
+            .content-container.mobile-view .book-row {
+                margin-bottom: 15px;
+            }
+
+            .content-container.mobile-view .book-cell.title-cell {
+                font-size: 1.1em;
+            }
+
+            .content-container.mobile-view .book-cell:not(.cover-cell):not(.title-cell):not(.authors-cell):before {
+                min-width: 70px;
                 font-size: 0.9em;
             }
-            
-            table {
-                min-width: 800px;
+
+            .content-container.mobile-view .book-cell {
+                font-size: 0.9em;
             }
         }
     </style>
@@ -428,8 +524,8 @@
             </div>
         </div>
         
-        <div class="table-container">
-            <div id="tableContent" style="text-align: center; padding: 50px; font-size: 1.2em; color: #6c757d;">Loading books...</div>
+        <div class="content-container">
+            <div id="contentArea" style="text-align: center; padding: 50px; font-size: 1.2em; color: #6c757d;">Loading books...</div>
         </div>
     </div>
 
@@ -445,6 +541,24 @@
         let availableMetadataFields = new Set();
         let isResizing = false;
         let resizingColumn = null;
+        let isMobileView = false;
+        
+        function checkMobileView() {
+            const wasMobile = isMobileView;
+            isMobileView = window.innerWidth <= 768;
+            const contentContainer = document.querySelector('.content-container');
+            
+            if (isMobileView) {
+                contentContainer.classList.add('mobile-view');
+            } else {
+                contentContainer.classList.remove('mobile-view');
+            }
+            
+            // Re-render if view changed
+            if (wasMobile !== isMobileView && filteredBooks.length > 0) {
+                renderContent();
+            }
+        }
         
         function loadBooks() {
             // Check if the books data is available from the loaded script
@@ -473,10 +587,11 @@
                 currentSort = { column: 'id', direction: 'desc' };
 
                 setupColumnPicker();
-                renderTable();
+                checkMobileView();
+                renderContent();
             } else {
-                document.getElementById('tableContent').innerHTML = 
-                    '<div style="text-align: center; padding: 50px; color: #dc3545; font-size: 1.1em;">Error: books.js file not found. Make sure books.js is in the same directory as this HTML file.</div>';
+                const errorMsg = '<div style="text-align: center; padding: 50px; color: #dc3545; font-size: 1.1em;">Error: books.js file not found. Make sure books.js is in the same directory as this HTML file.</div>';
+                document.getElementById('contentArea').innerHTML = errorMsg;
             }
         }
 
@@ -550,7 +665,7 @@
                 item.classList.remove('active');
                 item.classList.add('inactive');
             }
-            renderTable();
+            renderContent();
         }
         
         // Header drag and drop functions
@@ -709,9 +824,9 @@
         });
 
 
-        function renderTable() {
+        function renderContent() {
             if (filteredBooks.length === 0) {
-                document.getElementById('tableContent').innerHTML = 
+                document.getElementById('contentArea').innerHTML = 
                     '<div class="no-results">No books found matching your criteria</div>';
                 return;
             }
@@ -744,32 +859,35 @@
                 
                 const cellsHTML = activeColumns.map(col => {
                     let value = book[col] || metadata[col] || '-';
+                    const label = col.charAt(0).toUpperCase() + col.slice(1);
                     
-                    if (col === 'cover') {
+                    if (col === 'id') {
+                        return `<td class="book-cell id-cell" data-label="Id">${value}</td>`;
+                    } else if (col === 'cover') {
                         const uuid = book.uuid || book.id;
                         const coverImg = `<img src="covers/${uuid}.jpg" 
                                                alt="Cover for ${value}" 
                                                class="cover-image"
                                                loading="lazy"
                                                onerror="this.style.display='none'">`;
-                        return `<td class="cover-cell">${coverImg}</td>`;
+                        return `<td class="book-cell cover-cell" data-label="${label}">${coverImg}</td>`;
                     } else if (col === 'title') {
-                        return `<td class="title-cell">${value}</td>`;
+                        return `<td class="book-cell title-cell" data-label="${label}">${value}</td>`;
                     } else if (col === 'authors') {
                         const authors = Array.isArray(value) ? value.join(', ') : value;
-                        return `<td class="authors-cell">${authors || '-'}</td>`;
+                        return `<td class="book-cell authors-cell" data-label="${label}">${authors || '-'}</td>`;
                     } else if (col === 'tags') {
                         const tags = Array.isArray(value) ? value : [];
                         const tagsHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
-                        return `<td><div class="tags">${tagsHTML || '-'}</div></td>`;
+                        return `<td class="book-cell" data-label="${label}"><span class="field-label">Tags: </span><div class="tags">${tagsHTML || '-'}</div></td>`;
                     } else if (col === 'pubdate' || col === 'date') {
-                        return `<td>${formatDate(value)}</td>`;
+                        return `<td class="book-cell" data-label="Published"><span class="field-label">Published: </span>${formatDate(value)}</td>`;
                     } else if (col === 'subject') {
                         const subjects = Array.isArray(value) ? value : [value].filter(Boolean);
                         const subjectsHTML = subjects.map(subject => `<span class="tag">${subject}</span>`).join('');
-                        return `<td><div class="tags">${subjectsHTML || '-'}</div></td>`;
+                        return `<td class="book-cell" data-label="${label}"><span class="field-label">${label}: </span><div class="tags">${subjectsHTML || '-'}</div></td>`;
                     } else if (col === 'creator') {
-                        return `<td class="authors-cell">${value || '-'}</td>`;
+                        return `<td class="book-cell authors-cell" data-label="${label}"><span class="field-label">${label}: </span>${value || '-'}</td>`;
                     } else if (col === 'description') {
                         // Strip HTML tags from description and preserve newlines
                         let text = value !== '-' && value ? value.replace(/<[^>]*>/g, '') : '-';
@@ -783,21 +901,21 @@
                         const bookId = book.uuid || book.id;
                         
                         // Always create expandable structure, we'll check actual lines after render
-                        return `<td class="description-cell" 
+                        return `<td class="book-cell description-cell" 
                                    style="white-space: normal; word-wrap: break-word;"
-                                   data-book-id="${bookId}">
+                                   data-book-id="${bookId}" data-label="${label}">
                                    <div id="desc-${bookId}" class="description-text">
-                                       ${text}
+                                       <span class="field-label">Description: </span>${text}
                                    </div>
                                </td>`;
                     } else if (Array.isArray(value)) {
-                        return `<td>${value.join(', ') || '-'}</td>`;
+                        return `<td class="book-cell" data-label="${label}"><span class="field-label">${label}: </span>${value.join(', ') || '-'}</td>`;
                     } else {
-                        return `<td>${value || '-'}</td>`;
+                        return `<td class="book-cell" data-label="${label}"><span class="field-label">${label}: </span>${value || '-'}</td>`;
                     }
                 }).join('');
                 
-                return `<tr>${cellsHTML}</tr>`;
+                return `<tr class="book-row">${cellsHTML}</tr>`;
             }).join('');
             
             const tableHTML = `
@@ -811,21 +929,23 @@
                 </table>
             `;
             
-            document.getElementById('tableContent').innerHTML = tableHTML;
+            document.getElementById('contentArea').innerHTML = tableHTML;
             
             // Setup initial render
             setTimeout(() => {
                 checkDescriptionLengths();
                 
-                const tableContainer = document.querySelector('.table-container');
-                const table = document.querySelector('table');
-                if (table && tableContainer) {
-                    const tableWidth = table.getBoundingClientRect().width;
-                    const containerWidth = tableContainer.getBoundingClientRect().width;
-                    if (tableWidth > containerWidth) {
-                        tableContainer.style.paddingRight = '100px';
-                    } else {
-                        tableContainer.style.paddingRight = '0';
+                if (!isMobileView) {
+                    const contentContainer = document.querySelector('.content-container');
+                    const table = document.querySelector('table');
+                    if (table && contentContainer) {
+                        const tableWidth = table.getBoundingClientRect().width;
+                        const containerWidth = contentContainer.getBoundingClientRect().width;
+                        if (tableWidth > containerWidth) {
+                            contentContainer.style.paddingRight = '100px';
+                        } else {
+                            contentContainer.style.paddingRight = '0';
+                        }
                     }
                 }
             }, 10);
@@ -876,7 +996,7 @@
                 return 0;
             });
             
-            renderTable();
+            renderContent();
         }
 
         function updateSortIndicators() {
@@ -908,10 +1028,13 @@
                 return matchesSearch;
             });
             
-            renderTable();
+            renderContent();
         }
 
         document.getElementById('searchBox').addEventListener('input', filterBooks);
+
+        // Add resize listener for mobile view detection
+        window.addEventListener('resize', checkMobileView);
 
         loadBooks();
     </script>
