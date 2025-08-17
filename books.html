@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Books</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 0;
+        }
+
+        .container {
+            width: 100%;
+            margin: 0;
+            background: white;
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .controls {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            align-items: center;
+            position: relative;
+        }
+
+        .column-picker-btn {
+            padding: 10px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .column-picker-btn:hover {
+            background: #5a67d8;
+        }
+
+        .column-picker-dropdown {
+            position: absolute;
+            top: 60px;
+            right: 0;
+            background: white;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            max-height: 400px;
+            overflow-y: auto;
+            min-width: 300px;
+        }
+
+        .column-picker-dropdown.active {
+            display: block;
+        }
+
+        .column-picker-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            user-select: none;
+        }
+
+        .column-picker-item.active {
+            opacity: 1;
+        }
+
+        .column-picker-item.inactive {
+            opacity: 0.5;
+        }
+
+        .column-picker-item.dragging {
+            opacity: 0.3;
+            transform: rotate(5deg);
+        }
+
+        .column-picker-item.drag-over {
+            border-top: 3px solid #667eea;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #667eea;
+            font-size: 16px;
+            font-weight: bold;
+            margin-right: 8px;
+            padding: 2px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .drag-handle:hover {
+            background: #f0f4ff;
+            color: #5a67d8;
+        }
+
+        .drag-handle:active {
+            cursor: grabbing;
+            background: #e2e8f0;
+        }
+
+        .column-picker-item:hover {
+            background: #f8f9fa;
+        }
+
+        .column-picker-item input[type="checkbox"] {
+            cursor: pointer;
+        }
+
+        .column-picker-header {
+            padding: 10px 15px;
+            font-weight: 600;
+            border-bottom: 1px solid #dee2e6;
+            background: #f8f9fa;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .filter-select {
+            padding: 10px 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 5px;
+            font-size: 16px;
+            background: white;
+            cursor: pointer;
+            transition: border-color 0.3s;
+        }
+
+        .filter-select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .table-container {
+            position: relative;
+            margin-left: -20px;
+            margin-right: -20px;
+        }
+        
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+
+        table {
+            border-collapse: collapse;
+            min-width: 100%;
+        }
+
+        thead {
+            position: sticky;
+            top: 0;
+            background: #6c757d;
+            color: white;
+            z-index: 10;
+        }
+
+        th {
+            padding: 15px 15px 15px 15px;
+            text-align: left;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            white-space: nowrap;
+            position: relative;
+        }
+
+        th:first-child {
+            margin-left: -50px;
+            padding-left: 50px;
+        }
+
+        tr {
+            height: auto;
+        }
+
+        .description-cell {
+            position: relative;
+        }
+
+        .description-text {
+            line-height: 1.4;
+        }
+
+        .description-collapsed {
+            display: -webkit-box;
+            -webkit-line-clamp: 5;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            cursor: pointer;
+            word-break: normal;
+            overflow-wrap: break-word;
+            hyphens: auto;
+        }
+
+        .description-expanded {
+            cursor: pointer;
+        }
+
+        .collapse-indicator {
+            display: block;
+            color: #667eea;
+            font-size: 0.9em;
+            font-weight: bold;
+            margin-top: 5px;
+            text-align: right;
+        }
+
+        .resize-handle {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 8px;
+            height: 100%;
+            cursor: col-resize;
+            background: transparent;
+        }
+
+        .resize-handle:hover {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        th[data-column="id"] {
+            width: 60px !important;
+            min-width: 60px;
+            max-width: 60px;
+        }
+
+        th[data-column="cover"] {
+            width: 100px;
+        }
+
+        th[data-column="title"] {
+            width: 300px;
+        }
+
+        th[data-column="authors"] {
+            width: 140px;
+        }
+
+        th[data-column="pubdate"] {
+            width: 140px;
+        }
+
+        th.draggable {
+            cursor: grab;
+        }
+
+        th.draggable:active {
+            cursor: grabbing;
+        }
+
+        th.dragging {
+            opacity: 0.5;
+        }
+
+        th.drag-over {
+            border-right: 3px solid #667eea;
+            background: #f0f4ff;
+        }
+
+        th:hover {
+            background: #5a6268;
+        }
+
+        th.sortable:after {
+            content: ' ↕';
+            opacity: 0.5;
+            font-size: 0.8em;
+        }
+
+        th.sorted-asc:after {
+            content: ' ↑';
+            opacity: 1;
+        }
+
+        th.sorted-desc:after {
+            content: ' ↓';
+            opacity: 1;
+        }
+
+        td {
+            padding: 12px 15px 12px 15px;
+            border-bottom: 1px solid #dee2e6;
+            text-align: left;
+            vertical-align: top;
+            white-space: normal;
+            word-wrap: break-word;
+        }
+
+        td:first-child {
+            margin-left: -50px;
+            padding-left: 50px;
+        }
+
+        tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .title-cell {
+            font-weight: 600;
+            color: #495057;
+            text-align: left;
+        }
+
+        .cover-cell {
+            text-align: center;
+            vertical-align: top;
+            padding: 8px;
+        }
+
+        .cover-image {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            object-fit: contain;
+            margin: 0 auto;
+        }
+
+        .authors-cell {
+            color: #6c757d;
+            text-align: left;
+        }
+
+        .tags {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .tag {
+            background: #e9ecef;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            color: #495057;
+        }
+
+        .formats {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .format {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 3px 8px;
+            border-radius: 3px;
+            font-size: 0.85em;
+            font-weight: 500;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #6c757d;
+        }
+
+        .error {
+            text-align: center;
+            padding: 50px;
+            color: #dc3545;
+            font-size: 1.1em;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 50px;
+            color: #6c757d;
+            font-size: 1.1em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                border-radius: 0;
+            }
+            
+            body {
+                padding: 0;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+
+            th, td {
+                padding: 8px;
+                font-size: 0.9em;
+            }
+            
+            table {
+                min-width: 800px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📚 Books</h1>
+        </div>
+        
+        <div class="controls">
+            <input type="text" 
+                   class="search-box" 
+                   id="searchBox" 
+                   placeholder="Search by title, author, or tags...">
+            
+            <button class="column-picker-btn" id="columnPickerBtn">
+                ⚙️ Columns
+            </button>
+            
+            <div class="column-picker-dropdown" id="columnPickerDropdown">
+                <div class="column-picker-header">Select & Reorder Columns</div>
+                <div id="columnPickerList"></div>
+            </div>
+        </div>
+        
+        <div class="table-container">
+            <div id="tableContent" class="loading">Loading books...</div>
+        </div>
+    </div>
+
+    <!-- Load books data as JavaScript -->
+    <script src="books.js"></script>
+    <script src="metadata.js"></script>
+    
+    <script>
+        let booksData = [];
+        let filteredBooks = [];
+        let currentSort = { column: null, direction: 'asc' };
+        let activeColumns = ['id', 'cover', 'title', 'authors', 'description', 'pubdate'];
+        let availableMetadataFields = new Set();
+        let isResizing = false;
+        let resizingColumn = null;
+        
+        // Remove virtual scrolling - just render all rows
+        // Virtual scrolling is causing image reloading issues
+
+        function loadBooks() {
+            // Check if the books data is available from the loaded script
+            if (typeof booksLibraryData !== 'undefined') {
+                booksData = booksLibraryData.books || booksLibraryData;
+                filteredBooks = [...booksData];
+                
+                // Discover available metadata fields
+                if (typeof bookMetadata !== 'undefined') {
+                    for (const uuid in bookMetadata) {
+                        const metadata = bookMetadata[uuid];
+                        for (const field in metadata) {
+                            if (typeof metadata[field] !== 'object' || Array.isArray(metadata[field])) {
+                                availableMetadataFields.add(field);
+                            }
+                        }
+                    }
+                }
+                
+                // Sort by ID descending (largest first) by default
+                filteredBooks.sort((a, b) => {
+                    const aId = parseInt(a.id) || 0;
+                    const bId = parseInt(b.id) || 0;
+                    return bId - aId; // Descending order (largest first)
+                });
+                currentSort = { column: 'id', direction: 'desc' };
+
+                setupColumnPicker();
+                renderTable();
+            } else {
+                document.getElementById('tableContent').innerHTML = 
+                    '<div class="error">Error: books.js file not found. Make sure books.js is in the same directory as this HTML file.</div>';
+            }
+        }
+
+        function setupColumnPicker() {
+            const pickerList = document.getElementById('columnPickerList');
+            if (!pickerList) {
+                console.error('Column picker list element not found!');
+                return;
+            }
+            
+            pickerList.innerHTML = '';
+            
+            // Get all available columns
+            const defaultColumns = [
+                { id: 'id', label: 'ID' },
+                { id: 'cover', label: 'Cover' },
+                { id: 'title', label: 'Title' },
+                { id: 'authors', label: 'Authors' },
+                { id: 'description', label: 'Description' },
+                { id: 'pubdate', label: 'Published' },
+                { id: 'tags', label: 'Tags' }
+            ];
+            
+            const metadataColumns = Array.from(availableMetadataFields)
+                .filter(field => !defaultColumns.some(col => col.id === field))
+                .sort()
+                .map(field => ({
+                    id: field,
+                    label: field.charAt(0).toUpperCase() + field.slice(1) + ' (metadata)'
+                }));
+            
+            const allColumns = [...defaultColumns, ...metadataColumns];
+            
+            // Create simple checkbox items (no drag handles)
+            allColumns.forEach((col, index) => {
+                const item = document.createElement('div');
+                const isActive = activeColumns.includes(col.id);
+                item.className = `column-picker-item ${isActive ? 'active' : 'inactive'}`;
+                
+                // Create checkbox
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `col-${col.id}`;
+                checkbox.value = col.id;
+                checkbox.checked = isActive;
+                checkbox.addEventListener('change', toggleColumn);
+                
+                // Create label
+                const label = document.createElement('label');
+                label.setAttribute('for', `col-${col.id}`);
+                label.textContent = col.label;
+                
+                // Append elements
+                item.appendChild(checkbox);
+                item.appendChild(label);
+                
+                pickerList.appendChild(item);
+            });
+        }
+
+        function toggleColumn(e) {
+            const column = e.target.value;
+            const item = e.target.closest('.column-picker-item');
+            
+            if (e.target.checked) {
+                if (!activeColumns.includes(column)) {
+                    // Add new columns at the end
+                    activeColumns.push(column);
+                }
+                item.classList.remove('inactive');
+                item.classList.add('active');
+            } else {
+                activeColumns = activeColumns.filter(col => col !== column);
+                item.classList.remove('active');
+                item.classList.add('inactive');
+            }
+            renderTable();
+        }
+        
+        // Header drag and drop functions
+        let draggedColumn = null;
+        let draggedColumnIndex = null;
+        
+        function handleHeaderDragStart(e) {
+            draggedColumn = e.target.dataset.column;
+            draggedColumnIndex = parseInt(e.target.dataset.index);
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', draggedColumn);
+        }
+        
+        function handleHeaderDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        }
+        
+        function handleHeaderDragEnter(e) {
+            e.preventDefault();
+            const targetColumn = e.target.dataset.column;
+            if (targetColumn && targetColumn !== draggedColumn) {
+                e.target.classList.add('drag-over');
+            }
+        }
+        
+        function handleHeaderDragLeave(e) {
+            e.target.classList.remove('drag-over');
+        }
+        
+        function handleHeaderDrop(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const targetColumn = e.target.dataset.column;
+            const targetIndex = parseInt(e.target.dataset.index);
+            
+            if (targetColumn && targetColumn !== draggedColumn) {
+                // Reorder the activeColumns array
+                const newActiveColumns = [...activeColumns];
+                const draggedCol = newActiveColumns.splice(draggedColumnIndex, 1)[0];
+                newActiveColumns.splice(targetIndex, 0, draggedCol);
+                activeColumns = newActiveColumns;
+                
+                // Re-render the table
+                renderTable();
+            }
+            
+            // Clean up
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('drag-over', 'dragging');
+            });
+        }
+        
+        function handleHeaderDragEnd(e) {
+            // Clean up all drag states
+            document.querySelectorAll('th').forEach(th => {
+                th.classList.remove('drag-over', 'dragging');
+            });
+            draggedColumn = null;
+            draggedColumnIndex = null;
+        }
+
+        // Virtual scrolling functions
+        
+
+        // Check actual rendered line heights for descriptions
+        function checkDescriptionLengths() {
+            document.querySelectorAll('.description-text').forEach(desc => {
+                const lineHeight = parseFloat(getComputedStyle(desc).lineHeight);
+                const height = desc.scrollHeight;
+                const lines = Math.round(height / lineHeight);
+                
+                if (lines > 5) {
+                    desc.classList.add('description-collapsed');
+                    desc.onclick = () => toggleDescription(desc.id.replace('desc-', ''));
+                    
+                    // Add collapse indicator for when expanded
+                    if (!desc.querySelector('.collapse-indicator')) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'collapse-indicator';
+                        indicator.textContent = 'Click to collapse';
+                        indicator.style.display = 'none';
+                        desc.appendChild(indicator);
+                    }
+                }
+            });
+        }
+
+        // Description expand/collapse functionality
+        function toggleDescription(bookId) {
+            const descElement = document.getElementById(`desc-${bookId}`);
+            const indicator = descElement.querySelector('.collapse-indicator');
+            
+            if (descElement.classList.contains('description-collapsed')) {
+                descElement.classList.remove('description-collapsed');
+                descElement.classList.add('description-expanded');
+                if (indicator) indicator.style.display = 'block';
+            } else {
+                descElement.classList.remove('description-expanded');
+                descElement.classList.add('description-collapsed');
+                if (indicator) indicator.style.display = 'none';
+            }
+        }
+
+        // Simple resize functionality
+        function startResize(e, th) {
+            e.stopPropagation();
+            e.preventDefault();
+            
+            isResizing = true;
+            resizingColumn = th;
+            const startX = e.clientX;
+            const startWidth = th.getBoundingClientRect().width;
+            
+            // Disable dragging and clicking on the header during resize
+            th.draggable = false;
+            th.style.pointerEvents = 'none';
+            
+            function doResize(e) {
+                if (!isResizing) return;
+                const deltaX = e.clientX - startX;
+                const newWidth = startWidth + deltaX;
+                if (newWidth > 30) { // Minimum 30px
+                    th.style.width = newWidth + 'px';
+                }
+            }
+            
+            function stopResize() {
+                isResizing = false;
+                resizingColumn = null;
+                
+                // Re-enable header functionality after a short delay
+                setTimeout(() => {
+                    th.draggable = true;
+                    th.style.pointerEvents = '';
+                }, 50);
+                
+                document.removeEventListener('mousemove', doResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+            
+            document.addEventListener('mousemove', doResize);
+            document.addEventListener('mouseup', stopResize);
+        }
+
+
+        // Column picker dropdown toggle
+        document.getElementById('columnPickerBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            const dropdown = document.getElementById('columnPickerDropdown');
+            dropdown.classList.toggle('active');
+        });
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', () => {
+            document.getElementById('columnPickerDropdown').classList.remove('active');
+        });
+
+        // Prevent dropdown from closing when clicking inside
+        document.getElementById('columnPickerDropdown').addEventListener('click', (e) => {
+            e.stopPropagation();
+        });
+
+
+        function renderTable() {
+            if (filteredBooks.length === 0) {
+                document.getElementById('tableContent').innerHTML = 
+                    '<div class="no-results">No books found matching your criteria</div>';
+                return;
+            }
+            
+            // Generate header with drag and resize functionality
+            const headerHTML = activeColumns.map((col, index) => {
+                const label = col.charAt(0).toUpperCase() + col.slice(1);
+                const isSortable = col !== 'tags' && col !== 'subject' && col !== 'cover';
+                const sortableClass = isSortable ? 'sortable' : '';
+                const sortableClick = isSortable ? `onclick="sortTable('${col}')"` : '';
+                return `<th class="${sortableClass} draggable" 
+                           draggable="true" 
+                           data-column="${col}" 
+                           data-index="${index}"
+                           ${sortableClick}
+                           ondragstart="handleHeaderDragStart(event)"
+                           ondragover="handleHeaderDragOver(event)"
+                           ondragenter="handleHeaderDragEnter(event)"
+                           ondragleave="handleHeaderDragLeave(event)"
+                           ondrop="handleHeaderDrop(event)"
+                           ondragend="handleHeaderDragEnd(event)">
+                           ${label}
+                           <div class="resize-handle" onmousedown="startResize(event, this.parentElement)"></div>
+                       </th>`;
+            }).join('');
+            
+            // Generate table rows
+            const rowsHTML = filteredBooks.map(book => {
+                const metadata = (typeof bookMetadata !== 'undefined' && bookMetadata[book.uuid]) || {};
+                
+                const cellsHTML = activeColumns.map(col => {
+                    let value = book[col] || metadata[col] || '-';
+                    
+                    if (col === 'cover') {
+                        const uuid = book.uuid || book.id;
+                        const coverImg = `<img src="covers/${uuid}.jpg" 
+                                               alt="Cover for ${value}" 
+                                               class="cover-image"
+                                               loading="lazy"
+                                               onerror="this.style.display='none'">`;
+                        return `<td class="cover-cell">${coverImg}</td>`;
+                    } else if (col === 'title') {
+                        return `<td class="title-cell">${value}</td>`;
+                    } else if (col === 'authors') {
+                        const authors = Array.isArray(value) ? value.join(', ') : value;
+                        return `<td class="authors-cell">${authors || '-'}</td>`;
+                    } else if (col === 'tags') {
+                        const tags = Array.isArray(value) ? value : [];
+                        const tagsHTML = tags.map(tag => `<span class="tag">${tag}</span>`).join('');
+                        return `<td><div class="tags">${tagsHTML || '-'}</div></td>`;
+                    } else if (col === 'pubdate' || col === 'date') {
+                        return `<td>${formatDate(value)}</td>`;
+                    } else if (col === 'subject') {
+                        const subjects = Array.isArray(value) ? value : [value].filter(Boolean);
+                        const subjectsHTML = subjects.map(subject => `<span class="tag">${subject}</span>`).join('');
+                        return `<td><div class="tags">${subjectsHTML || '-'}</div></td>`;
+                    } else if (col === 'creator') {
+                        return `<td class="authors-cell">${value || '-'}</td>`;
+                    } else if (col === 'description') {
+                        // Strip HTML tags from description
+                        const text = value !== '-' && value ? value.replace(/<[^>]*>/g, '') : '-';
+                        const bookId = book.uuid || book.id;
+                        
+                        // Always create expandable structure, we'll check actual lines after render
+                        return `<td class="description-cell" 
+                                   style="white-space: normal; word-wrap: break-word;"
+                                   data-book-id="${bookId}">
+                                   <div id="desc-${bookId}" class="description-text">
+                                       ${text}
+                                   </div>
+                               </td>`;
+                    } else if (Array.isArray(value)) {
+                        return `<td>${value.join(', ') || '-'}</td>`;
+                    } else {
+                        return `<td>${value || '-'}</td>`;
+                    }
+                }).join('');
+                
+                return `<tr>${cellsHTML}</tr>`;
+            }).join('');
+            
+            const tableHTML = `
+                <table>
+                    <thead>
+                        <tr>${headerHTML}</tr>
+                    </thead>
+                    <tbody>
+                        ${rowsHTML}
+                    </tbody>
+                </table>
+            `;
+            
+            document.getElementById('tableContent').innerHTML = tableHTML;
+            
+            // Setup initial render
+            setTimeout(() => {
+                checkDescriptionLengths();
+                
+                const tableContainer = document.querySelector('.table-container');
+                const table = document.querySelector('table');
+                if (table && tableContainer) {
+                    const tableWidth = table.getBoundingClientRect().width;
+                    const containerWidth = tableContainer.getBoundingClientRect().width;
+                    if (tableWidth > containerWidth) {
+                        tableContainer.style.paddingRight = '100px';
+                    } else {
+                        tableContainer.style.paddingRight = '0';
+                    }
+                }
+            }, 10);
+            
+            updateSortIndicators();
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return '-';
+            try {
+                const date = new Date(dateStr);
+                if (date.getFullYear() === 100) return '-';
+                return date.toLocaleDateString();
+            } catch {
+                return '-';
+            }
+        }
+
+
+        function sortTable(column) {
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                currentSort.direction = 'asc';
+            }
+            
+            filteredBooks.sort((a, b) => {
+                let aVal = a[column];
+                let bVal = b[column];
+                
+                if (column === 'authors') {
+                    aVal = a.authors_sort || (a.authors || []).join(', ');
+                    bVal = b.authors_sort || (b.authors || []).join(', ');
+                } else if (column === 'size') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                } else if (column === 'id') {
+                    aVal = parseInt(aVal) || 0;
+                    bVal = parseInt(bVal) || 0;
+                }
+                
+                if (aVal === null || aVal === undefined) aVal = '';
+                if (bVal === null || bVal === undefined) bVal = '';
+                
+                if (aVal < bVal) return currentSort.direction === 'asc' ? -1 : 1;
+                if (aVal > bVal) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+            
+            renderTable();
+        }
+
+        function updateSortIndicators() {
+            document.querySelectorAll('th.sortable').forEach(th => {
+                th.classList.remove('sorted-asc', 'sorted-desc');
+            });
+            
+            if (currentSort.column) {
+                const sortedTh = Array.from(document.querySelectorAll('th')).find(th => 
+                    th.textContent.toLowerCase().includes(currentSort.column.toLowerCase()) ||
+                    (currentSort.column === 'id' && th.textContent === 'ID') ||
+                    (currentSort.column === 'pubdate' && th.textContent.includes('Published'))
+                );
+                if (sortedTh) {
+                    sortedTh.classList.add(`sorted-${currentSort.direction}`);
+                }
+            }
+        }
+
+        function filterBooks() {
+            const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+            
+            filteredBooks = booksData.filter(book => {
+                const matchesSearch = !searchTerm || 
+                    (book.title && book.title.toLowerCase().includes(searchTerm)) ||
+                    ((book.authors || []).some(author => author.toLowerCase().includes(searchTerm))) ||
+                    ((book.tags || []).some(tag => tag.toLowerCase().includes(searchTerm)));
+                
+                return matchesSearch;
+            });
+            
+            renderTable();
+        }
+
+        document.getElementById('searchBox').addEventListener('input', filterBooks);
+
+        loadBooks();
+    </script>
+</body>
+</html>
