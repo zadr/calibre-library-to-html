@@ -301,6 +301,18 @@ def export_all_books(calibredb_path, library_path=None, output_dir='.',
         print(f"\n⚠️  Note: books.html viewer not found in script directory")
         print(f"  Copy books.html to {output_dir} to view the library")
     
+    # Copy App/ directory
+    app_src = script_dir / "App"
+    app_dst = output_dir / "App"
+    
+    try:
+        if app_dst.exists():
+            shutil.rmtree(app_dst)
+        shutil.copytree(app_src, app_dst)
+        print(f"✓ Copied iOS App project")
+    except Exception as e:
+        print(f"Warning: Could not copy App/: {e}")
+    
     print(f"\n✅ Export complete!")
     print(f"   Books exported: {len(books_data)}")
     print(f"   Output directory: {output_dir.absolute()}")

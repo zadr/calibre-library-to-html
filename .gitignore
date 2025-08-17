@@ -4,3 +4,6 @@ books.js
 covers/
 metadata.js
 output/
+
+*xcuserdata*
+*xcworkspacedata
